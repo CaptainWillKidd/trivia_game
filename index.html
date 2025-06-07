@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Challenge</title>
+    <meta name="description" content="Try your knowledge with Trivia Challenge! Answer questions, earn points, and compete on the leaderboard.">
+    <meta name="keywords" content="trivia, quiz, game, questions, leaderboard, knowledge, fun">
+    <meta name="author" content="Willian Alves Canuto">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script type="module" src="scripts/scripts.js"></script>
+</head>
+<body>
+        <header>
+            <div class="logo">
+                <i class="fas fa-question-circle"></i>
+                <h1>Trivia Challenge</h1>
+            </div>
+            <div class="user-info">
+                <span id="userName">Guest</span>
+                <button id="authButton">Login</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="game-container">
+                <div class="question-container">
+                    <div class="question-header">
+                        <div class="category">Science</div>
+                        <div class="difficulty">Easy</div>
+                        <div class="score">Score: <span id="scoreValue">0</span></div>
+                    </div>
+                    
+                    <div id="questionText" class="question-text">
+                        Loading question...
+                    </div>
+                    
+                    <div id="optionsContainer" class="options-container">
+                    </div>
+                    
+                    <div class="game-footer">
+                        <div class="timer">
+                            <div class="timer-circle">
+                                <span id="timerValue">15</span>
+                            </div>
+                            <div>seconds remaining</div>
+                        </div>
+                        
+                        <button id="nextButton" class="btn btn-primary">
+                            Next Question <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="leaderboard">
+                    <h2><i class="fas fa-trophy"></i> Leaderboard</h2>
+                    <ul id="leaderboardList">
+                        <li>1. John - 850 points</li>
+                        <li>2. Mary - 720 points</li>
+                        <li>3. Carlos - 680 points</li>
+                        <li>4. Ana - 550 points</li>
+                        <li>5. Peter - 480 points</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Trivia Challenge - Final Project WDD 330</p>
+            <p>By Willian Alves Canuto</p>
+        </footer>
+    </div>
+</body>
+</html>
