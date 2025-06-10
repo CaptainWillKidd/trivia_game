@@ -1,22 +1,17 @@
-
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-
-
 const firebaseConfig = {
-  apiKey: "AIzaSyAStqws9j3TZPdtCSIbbfPyUMfXcBQYEQg",
-  authDomain: "finalprojectwd330.firebaseapp.com",
-  projectId: "finalprojectwd330",
-  storageBucket: "finalprojectwd330.firebasestorage.app",
-  messagingSenderId: "406713412663",
-  appId: "1:406713412663:web:57aaf146bed2fecf79e3b2",
-  measurementId: "G-99BGKDB1B7"
+    apiKey: "AIzaSyAStqws9j3TZPdtCSIbbfPyUMfXcBQYEQg",
+    authDomain: "finalprojectwd330.firebaseapp.com",
+    projectId: "finalprojectwd330",
+    storageBucket: "finalprojectwd330.firebasestorage.app",
+    messagingSenderId: "406713412663",
+    appId: "1:406713412663:web:57aaf146bed2fecf79e3b2",
+    measurementId: "G-99BGKDB1B7"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// DOM Elements
 const userNameElement = document.getElementById('userName');
 const authButton = document.getElementById('authButton');
 const questionTextElement = document.getElementById('questionText');
@@ -26,8 +21,11 @@ const timerElement = document.getElementById('timerValue');
 const nextButton = document.getElementById('nextButton');
 const authModal = document.createElement('div');
 authModal.className = 'auth-modal';
+const leaderboardList = document.getElementById('leaderboardList');
+const startScreen = document.getElementById('startScreen');
+const startButton = document.getElementById('startButton');
+const gameContainer = document.querySelector('.game-container');
 
-// Game variables
 let currentUser = null;
 let score = 0;
 let timer;
@@ -35,31 +33,61 @@ let timeLeft = 15;
 let currentQuestion = {};
 let questions = [];
 let currentQuestionIndex = 0;
+let correctAnswers = 0;
 
-// Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
     initAuthModal();
-    initGame();
     checkAuthState();
+    loadLeaderboard();
+    // Não chama loadQuestions() aqui!
+    // O jogo só começa ao clicar em Start
+    if (startButton) {
+        startButton.addEventListener('click', startGame);
+    }
 });
 
-// Check authentication state
+function startGame() {
+    startScreen.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    correctAnswers = 0;
+    score = 0;
+    scoreElement.textContent = score;
+    loadQuestions();
+}
+
 function checkAuthState() {
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
             userNameElement.textContent = user.displayName || user.email.split('@')[0];
-            authButton.textContent = 'Logout';
-            loadQuestions();
+            authButton.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            // Não chama loadQuestions() aqui!
         } else {
             currentUser = null;
             userNameElement.textContent = 'Guest';
-            authButton.textContent = 'Login';
+            authButton.innerHTML = '<i class="fas fa-user"></i> Login';
         }
     });
 }
 
-// Initialize authentication modal
+function loadLeaderboard() {
+    db.collection('scores').orderBy('score', 'desc').limit(5).get()
+        .then(querySnapshot => {
+            leaderboardList.innerHTML = '';
+            let rank = 1;
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const li = document.createElement('li');
+                li.textContent = `${rank}. ${data.name} - ${data.score} points`;
+                leaderboardList.appendChild(li);
+                rank++;
+            });
+        })
+        .catch(error => {
+            console.error("Error loading leaderboard: ", error);
+        });
+}
+
 function initAuthModal() {
     authModal.innerHTML = `
         <div class="auth-content">
@@ -93,8 +121,7 @@ function initAuthModal() {
     `;
     
     document.body.appendChild(authModal);
-    
-    // Event listeners
+
     authButton.addEventListener('click', () => {
         if (currentUser) {
             auth.signOut();
@@ -102,26 +129,23 @@ function initAuthModal() {
             authModal.style.display = 'flex';
         }
     });
-    
+
     authModal.querySelector('.close-modal').addEventListener('click', () => {
         authModal.style.display = 'none';
     });
-    
+
     document.querySelectorAll('.auth-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-            
             tab.classList.add('active');
             document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
         });
     });
-    
 
     document.getElementById('loginButton').addEventListener('click', () => {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
-        
         auth.signInWithEmailAndPassword(email, password)
             .then(() => {
                 authModal.style.display = 'none';
@@ -130,16 +154,13 @@ function initAuthModal() {
                 alert(`Login error: ${error.message}`);
             });
     });
-    
-  
+
     document.getElementById('registerButton').addEventListener('click', () => {
         const name = document.getElementById('registerName').value;
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
-        
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-
                 return userCredential.user.updateProfile({
                     displayName: name
                 });
@@ -151,7 +172,6 @@ function initAuthModal() {
                 alert(`Registration error: ${error.message}`);
             });
     });
-    
 
     document.getElementById('googleLogin').addEventListener('click', () => {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -165,17 +185,7 @@ function initAuthModal() {
     });
 }
 
-
-function initGame() {
-
-    loadQuestions();
-    
-    nextButton.addEventListener('click', loadNextQuestion);
-}
-
-
 function loadQuestions() {
-
     fetch('https://opentdb.com/api.php?amount=10')
         .then(response => response.json())
         .then(data => {
@@ -189,7 +199,6 @@ function loadQuestions() {
                         difficulty: q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)
                     };
                 });
-                
                 currentQuestionIndex = 0;
                 score = 0;
                 scoreElement.textContent = score;
@@ -205,13 +214,11 @@ function loadQuestions() {
         });
 }
 
-
 function decodeHtmlEntities(text) {
     const textArea = document.createElement('textarea');
     textArea.innerHTML = text;
     return textArea.value;
 }
-
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -220,7 +227,6 @@ function shuffleArray(array) {
     }
     return array;
 }
-
 
 function loadStaticQuestions() {
     questions = [
@@ -260,61 +266,47 @@ function loadStaticQuestions() {
             difficulty: "Easy"
         }
     ];
-    
     currentQuestionIndex = 0;
     score = 0;
     scoreElement.textContent = score;
     loadNextQuestion();
 }
 
-
 function loadNextQuestion() {
-
     clearInterval(timer);
     timeLeft = 15;
     timerElement.textContent = timeLeft;
-    
 
     if (currentQuestionIndex >= questions.length) {
-
-        loadQuestions();
+        saveScore();
+        showFinalResult();
         return;
     }
-    
+
     currentQuestion = questions[currentQuestionIndex];
     currentQuestionIndex++;
-    
 
     questionTextElement.textContent = currentQuestion.question;
-    
-
     document.querySelector('.category').textContent = currentQuestion.category;
     document.querySelector('.difficulty').textContent = currentQuestion.difficulty;
-    
-
     optionsContainer.innerHTML = '';
 
-    currentQuestion.options.forEach((option, index) => {
+    currentQuestion.options.forEach((option) => {
         const optionElement = document.createElement('div');
         optionElement.className = 'option';
         optionElement.textContent = option;
         optionElement.dataset.option = option;
-        
-        optionElement.addEventListener('click', () => {
 
+        optionElement.addEventListener('click', () => {
             document.querySelectorAll('.option').forEach(opt => {
                 opt.classList.remove('selected');
             });
-            
-
             optionElement.classList.add('selected');
-
             checkAnswer(option);
         });
-        
+
         optionsContainer.appendChild(optionElement);
     });
-    
 
     startTimer();
 }
@@ -323,7 +315,6 @@ function startTimer() {
     timer = setInterval(() => {
         timeLeft--;
         timerElement.textContent = timeLeft;
-        
         if (timeLeft <= 0) {
             clearInterval(timer);
             document.querySelectorAll('.option').forEach(opt => {
@@ -333,6 +324,23 @@ function startTimer() {
         }
     }, 1000);
 }
+
+function saveScore() {
+    if (currentUser && score > 0) {
+        const userName = currentUser.displayName || currentUser.email.split('@')[0];
+        db.collection('scores').add({
+            uid: currentUser.uid,
+            name: userName,
+            score: score,
+            date: new Date()
+        }).then(() => {
+            loadLeaderboard();
+        }).catch(error => {
+            console.error("Error saving score: ", error);
+        });
+    }
+}
+
 function checkAnswer(selectedOption) {
     clearInterval(timer);
 
@@ -345,6 +353,7 @@ function checkAnswer(selectedOption) {
 
     if (selectedOption === currentQuestion.correctAnswer) {
         score += 10;
+        correctAnswers++;
         scoreElement.textContent = score;
     } else {
         const selectedElement = optionsContainer.querySelector('.option.selected');
@@ -354,13 +363,16 @@ function checkAnswer(selectedOption) {
         }
     }
 
-    if (currentUser) {
-        db.collection('scores').add({
-            uid: currentUser.uid,
-            score: score,
-            date: new Date()
-        });
-    }
-
     setTimeout(loadNextQuestion, 2000);
+}
+
+function showFinalResult() {
+    gameContainer.style.display = 'none';
+    startScreen.style.display = 'flex';
+    startScreen.innerHTML = `
+        <h2>Game Over!</h2>
+        <p>You answered <strong>${correctAnswers}/${questions.length}</strong> questions correctly.</p>
+        <button id="startButton" class="btn btn-primary" style="font-size: 1.2em;">Play Again</button>
+    `;
+    document.getElementById('startButton').addEventListener('click', startGame);
 }

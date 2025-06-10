@@ -93,6 +93,10 @@ h1 {
 }
 
 .game-container {
+    display: none;
+}
+
+.game-container {
     display: flex;
     gap: 30px;
     margin: 40px 0;
@@ -386,4 +390,46 @@ footer {
         flex-direction: column;
         gap: 10px;
     }
+}
+
+#authButton {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#authButton:hover {
+    background: var(--primary);
+    color: var(--dark);
+    box-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+}
+
+#authButton i {
+    font-size: 16px;
+}
+
+.timer-circle {
+    transition: all 1s linear;
+}
+
+.option.correct {
+    border-color: var(--primary) !important;
+    background: rgba(29, 185, 84, 0.2) !important;
+}
+
+.option.incorrect {
+    border-color: var(--error) !important;
+    background: rgba(239, 71, 111, 0.2) !important;
+}
+
+.auth-modal {
+    backdrop-filter: blur(5px);
 }
