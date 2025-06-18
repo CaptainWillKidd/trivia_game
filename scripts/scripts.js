@@ -89,16 +89,24 @@ function checkAuthState() {
 }
 
 function loadLeaderboard() {
-    db.collection('scores').orderBy('score', 'desc').limit(5).get()
+    db.collection('scores').orderBy('score', 'desc').get()
         .then(querySnapshot => {
             leaderboardList.innerHTML = '';
-            let rank = 1;
+            const userScores = {};
             querySnapshot.forEach(doc => {
                 const data = doc.data();
+                const key = data.uid || data.name;
+                if (!userScores[key] || data.score > userScores[key].score) {
+                    userScores[key] = data;
+                }
+            });
+            const topScores = Object.values(userScores)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5);
+            topScores.forEach((data, index) => {
                 const li = document.createElement('li');
-                li.textContent = `${rank}. ${data.name} - ${data.score} points`;
+                li.textContent = `${index + 1}. ${data.name} - ${data.score} points`;
                 leaderboardList.appendChild(li);
-                rank++;
             });
         })
         .catch(error => {
@@ -204,7 +212,7 @@ function initAuthModal() {
 }
 
 function loadQuestions() {
-    fetch('https://opentdb.com/api.php?amount=10')
+    fetch('https://opentdb.com/api.php?amount=15')
         .then(response => response.json())
         .then(data => {
             if (data.response_code === 0) {
@@ -393,6 +401,20 @@ function showFinalResult() {
     localStorage.setItem('lastTotal', questions.length);
     localStorage.setItem('lastDate', new Date().toLocaleString());
 
+    let localLeaderboard = JSON.parse(localStorage.getItem('localLeaderboard')) || [];
+    const userName = currentUser
+        ? (currentUser.displayName || currentUser.email.split('@')[0])
+        : "Guest";
+    localLeaderboard.push({
+        name: userName,
+        score: score,
+        date: new Date().toLocaleString()
+    });
+    localLeaderboard = localLeaderboard
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+    localStorage.setItem('localLeaderboard', JSON.stringify(localLeaderboard));
+
     gameContainer.style.display = 'none';
     startScreen.style.display = 'flex';
     startScreen.innerHTML = `
@@ -401,4 +423,11 @@ function showFinalResult() {
         <button id="startButton" class="btn btn-primary" style="font-size: 1.2em;">Play Again</button>
     `;
     document.getElementById('startButton').addEventListener('click', startGame);
+}
+
+if (nextButton) {
+    nextButton.addEventListener('click', () => {
+        clearInterval(timer);
+        loadNextQuestion();
+    });
 }
