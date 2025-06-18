@@ -39,8 +39,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuthModal();
     checkAuthState();
     loadLeaderboard();
-    // Não chama loadQuestions() aqui!
-    // O jogo só começa ao clicar em Start
+
+    // Show last result from localStorage if exists
+    const lastScore = localStorage.getItem('lastScore');
+    const lastCorrect = localStorage.getItem('lastCorrect');
+    const lastTotal = localStorage.getItem('lastTotal');
+    const lastDate = localStorage.getItem('lastDate');
+    if (lastScore && lastCorrect && lastTotal && lastDate) {
+        startScreen.innerHTML = `
+            <h2>Welcome to Trivia Challenge!</h2>
+            <p>Your last result: <strong>${lastCorrect}/${lastTotal}</strong> correct answers (${lastScore} points) on ${lastDate}</p>
+            <button id="startButton" class="btn btn-primary" style="font-size: 1.2em;">Start</button>
+        `;
+    } else {
+        startScreen.innerHTML = `
+            <h2>Welcome to Trivia Challenge!</h2>
+            <button id="startButton" class="btn btn-primary" style="font-size: 1.2em;">Start</button>
+        `;
+    }
+
+    // Ensure the Start button works
+    const startButton = document.getElementById('startButton');
     if (startButton) {
         startButton.addEventListener('click', startGame);
     }
@@ -61,7 +80,6 @@ function checkAuthState() {
             currentUser = user;
             userNameElement.textContent = user.displayName || user.email.split('@')[0];
             authButton.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
-            // Não chama loadQuestions() aqui!
         } else {
             currentUser = null;
             userNameElement.textContent = 'Guest';
@@ -326,10 +344,12 @@ function startTimer() {
 }
 
 function saveScore() {
-    if (currentUser && score > 0) {
-        const userName = currentUser.displayName || currentUser.email.split('@')[0];
+    if (score > 0) {
+        const userName = currentUser
+            ? (currentUser.displayName || currentUser.email.split('@')[0])
+            : "Guest";
         db.collection('scores').add({
-            uid: currentUser.uid,
+            uid: currentUser ? currentUser.uid : null,
             name: userName,
             score: score,
             date: new Date()
@@ -367,6 +387,12 @@ function checkAnswer(selectedOption) {
 }
 
 function showFinalResult() {
+    // Save result to localStorage
+    localStorage.setItem('lastScore', score);
+    localStorage.setItem('lastCorrect', correctAnswers);
+    localStorage.setItem('lastTotal', questions.length);
+    localStorage.setItem('lastDate', new Date().toLocaleString());
+
     gameContainer.style.display = 'none';
     startScreen.style.display = 'flex';
     startScreen.innerHTML = `
